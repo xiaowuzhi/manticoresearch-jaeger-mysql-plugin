@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ManticoreSearch SQL Query Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            font-size: 13px;
+            resize: vertical;
+            min-height: 120px;
+            transition: border-color 0.3s;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .examples {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+        .examples h3 {
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 16px;
+        }
+        .example-btn {
+            display: inline-block;
+            margin: 5px 5px 5px 0;
+            padding: 6px 12px;
+            background: #e0e0e0;
+            color: #333;
+            border: none;
+            border-radius: 3px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .example-btn:hover {
+            background: #d0d0d0;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 5px;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 500px;
+            overflow-y: auto;
+            display: none;
+        }
+        #result.error {
+            background: #3d1f1f;
+            color: #ff6b6b;
+        }
+        #result.success {
+            background: #1e3d1e;
+            color: #51cf66;
+        }
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 ManticoreSearch SQL Query Tool</h1>
+        <p class="subtitle">通过 HTTP API 查询 ManticoreSearch 数据</p>
+        
+        <form id="queryForm">
+            <div class="form-group">
+                <label for="apiUrl">API 地址:</label>
+                <input type="text" id="apiUrl" value="http://localhost:9308/sql" placeholder="http://localhost:9308/sql">
+            </div>
+            
+            <div class="form-group">
+                <label for="sql">SQL 查询:</label>
+                <textarea id="sql" placeholder="输入 SQL 查询语句，例如: SHOW TABLES">SHOW TABLES</textarea>
+            </div>
+            
+            <button type="submit" id="submitBtn">
+                执行查询
+            </button>
+        </form>
+        
+        <div class="examples">
+            <h3>📝 示例查询:</h3>
+            <button class="example-btn" onclick="setQuery('SHOW TABLES')">显示所有表</button>
+            <button class="example-btn" onclick="setQuery('SELECT * FROM jaeger_spans LIMIT 10')">查询 spans</button>
+            <button class="example-btn" onclick="setQuery('SELECT COUNT(*) FROM jaeger_spans')">统计数量</button>
+            <button class="example-btn" onclick="setQuery('SELECT service_name, COUNT(*) as count FROM jaeger_spans GROUP BY service_name')">按服务分组</button>
+            <button class="example-btn" onclick="setQuery('DESCRIBE jaeger_spans')">表结构</button>
+        </div>
+        
+        <pre id="result"></pre>
+    </div>
+    
+    <script>
+        function setQuery(query) {
+            document.getElementById('sql').value = query;
+        }
+        
+        document.getElementById('queryForm').onsubmit = async function(e) {
+            e.preventDefault();
+            
+            const apiUrl = document.getElementById('apiUrl').value;
+            const sql = document.getElementById('sql').value;
+            const resultDiv = document.getElementById('result');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            // 显示加载状态
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '执行中... <span class="loading"></span>';
+            resultDiv.style.display = 'block';
+            resultDiv.className = '';
+            resultDiv.textContent = '正在查询...';
+            
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'mode=raw&query=' + encodeURIComponent(sql)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                resultDiv.className = 'success';
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultDiv.className = 'error';
+                resultDiv.textContent = '错误: ' + error.message + '\n\n请检查:\n1. API 地址是否正确\n2. Port-forward 是否运行\n3. ManticoreSearch 是否正常运行';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '执行查询';
+            }
+        };
+    </script>
+</body>
+</html>
+

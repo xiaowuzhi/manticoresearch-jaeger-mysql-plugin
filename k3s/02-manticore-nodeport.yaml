@@ -1,0 +1,32 @@
+---
+# ManticoreSearch Service (NodePort 版本)
+# 用于暴露 HTTP API 到集群外部
+apiVersion: v1
+kind: Service
+metadata:
+  name: manticore-nodeport
+  namespace: tracing
+  labels:
+    app: manticore
+    service-type: nodeport
+spec:
+  type: NodePort
+  ports:
+  - port: 9306
+    targetPort: 9306
+    nodePort: 30906
+    name: mysql
+    protocol: TCP
+  - port: 9308
+    targetPort: 9308
+    nodePort: 30908
+    name: http
+    protocol: TCP
+  - port: 9312
+    targetPort: 9312
+    nodePort: 30912
+    name: binary
+    protocol: TCP
+  selector:
+    app: manticore
+

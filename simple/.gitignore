@@ -1,0 +1,10 @@
+# 测试覆盖率
+coverage.out
+coverage.html
+
+# 性能分析
+*.prof
+
+# 构建产物
+simple
+main

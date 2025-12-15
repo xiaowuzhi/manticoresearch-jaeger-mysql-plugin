@@ -1,0 +1,162 @@
+---
+# ManticoreSearch ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: manticore-config
+  namespace: tracing
+data:
+  manticore.conf: |
+    searchd {
+        listen = 9306:mysql
+        listen = 9308:http
+        listen = 9312
+        log = /var/lib/manticore/log/searchd.log
+        query_log = /var/lib/manticore/log/query.log
+        pid_file = /var/lib/manticore/run/searchd.pid
+        binlog_path = /var/lib/manticore/data
+        max_packet_size = 128M
+        mysql_version_string = 5.5.21
+        data_dir = /var/lib/manticore/data
+    }
+
+---
+# ManticoreSearch PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: manticore-data
+  namespace: tracing
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+# ManticoreSearch Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: manticore
+  namespace: tracing
+  labels:
+    app: manticore
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: manticore
+  template:
+    metadata:
+      labels:
+        app: manticore
+    spec:
+      initContainers:
+      - name: init-config
+        image: busybox:latest
+        command:
+        - sh
+        - -c
+        - |
+          echo "=== Initializing ManticoreSearch ==="
+          
+          # 复制配置文件
+          echo "Copying config..."
+          cat /config-source/manticore.conf > /config/manticore.conf
+          chmod 644 /config/manticore.conf
+          
+          # 创建必要的目录
+          echo "Creating directories..."
+          mkdir -p /data/data
+          mkdir -p /data/log
+          mkdir -p /data/run
+          
+          # 设置权限
+          echo "Setting permissions..."
+          chmod -R 755 /data
+          
+          echo "=== Initialization complete ==="
+          ls -la /config/
+          ls -la /data/
+        volumeMounts:
+        - name: config-source
+          mountPath: /config-source
+        - name: config-volume
+          mountPath: /config
+        - name: data
+          mountPath: /data
+      containers:
+      - name: manticore
+        image: manticoresearch/manticore:latest
+        imagePullPolicy: IfNotPresent
+        command:
+        - searchd
+        - --config
+        - /etc/manticoresearch/manticore.conf
+        - --nodetach
+        ports:
+        - containerPort: 9306
+          name: mysql
+        - containerPort: 9308
+          name: http
+        - containerPort: 9312
+          name: binary
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/manticore
+        - name: config-volume
+          mountPath: /etc/manticoresearch
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          tcpSocket:
+            port: 9306
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          tcpSocket:
+            port: 9306
+          initialDelaySeconds: 10
+          periodSeconds: 5
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: manticore-data
+      - name: config-source
+        configMap:
+          name: manticore-config
+      - name: config-volume
+        emptyDir: {}
+
+---
+# ManticoreSearch Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: manticore
+  namespace: tracing
+  labels:
+    app: manticore
+spec:
+  type: ClusterIP
+  ports:
+  - port: 9306
+    targetPort: 9306
+    name: mysql
+  - port: 9308
+    targetPort: 9308
+    name: http
+  - port: 9312
+    targetPort: 9312
+    name: binary
+  selector:
+    app: manticore
+

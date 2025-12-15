@@ -1,0 +1,8 @@
+---
+# Tracing 命名空间
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tracing
+  labels:
+    name: tracing

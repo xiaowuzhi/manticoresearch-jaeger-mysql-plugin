@@ -1,0 +1,322 @@
+---
+# Jaeger 完整部署配置
+# 存储: ManticoreSearch (通过 Elasticsearch API)
+
+# ============================================
+# Jaeger Collector
+# ============================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger-collector
+  namespace: tracing
+  labels:
+    app: jaeger
+    component: collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jaeger
+      component: collector
+  template:
+    metadata:
+      labels:
+        app: jaeger
+        component: collector
+    spec:
+      containers:
+      - name: jaeger-collector
+        image: jaegertracing/jaeger-collector:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        # 存储配置 - ManticoreSearch (Elasticsearch API)
+        - name: SPAN_STORAGE_TYPE
+          value: "elasticsearch"
+        - name: ES_SERVER_URLS
+          value: "http://manticore:9308"
+        # 如果需要切换到内存存储，注释上面两行，取消注释下面一行
+        # - name: SPAN_STORAGE_TYPE
+        #   value: "memory"
+        
+        # OTLP 支持
+        - name: COLLECTOR_OTLP_ENABLED
+          value: "true"
+        # Zipkin 兼容
+        - name: COLLECTOR_ZIPKIN_HTTP_PORT
+          value: "9411"
+        ports:
+        - containerPort: 14250
+          name: grpc
+          protocol: TCP
+        - containerPort: 14268
+          name: http
+          protocol: TCP
+        - containerPort: 14269
+          name: admin
+          protocol: TCP
+        - containerPort: 9411
+          name: zipkin
+          protocol: TCP
+        - containerPort: 4317
+          name: otlp-grpc
+          protocol: TCP
+        - containerPort: 4318
+          name: otlp-http
+          protocol: TCP
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 14269
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 14269
+          initialDelaySeconds: 20
+          periodSeconds: 20
+
+---
+# ============================================
+# Jaeger Query (UI)
+# ============================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger-query
+  namespace: tracing
+  labels:
+    app: jaeger
+    component: query
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jaeger
+      component: query
+  template:
+    metadata:
+      labels:
+        app: jaeger
+        component: query
+    spec:
+      containers:
+      - name: jaeger-query
+        image: jaegertracing/jaeger-query:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        # 存储配置 - 必须与 Collector 一致
+        - name: SPAN_STORAGE_TYPE
+          value: "elasticsearch"
+        - name: ES_SERVER_URLS
+          value: "http://manticore:9308"
+        # 如果需要切换到内存存储，注释上面两行，取消注释下面一行
+        # - name: SPAN_STORAGE_TYPE
+        #   value: "memory"
+        
+        # Query 配置
+        - name: QUERY_BASE_PATH
+          value: "/"
+        ports:
+        - containerPort: 16686
+          name: ui
+          protocol: TCP
+        - containerPort: 16685
+          name: grpc
+          protocol: TCP
+        - containerPort: 16687
+          name: admin
+          protocol: TCP
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 16687
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 16687
+          initialDelaySeconds: 15
+          periodSeconds: 20
+
+---
+# ============================================
+# Jaeger Agent (DaemonSet)
+# ============================================
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: jaeger-agent
+  namespace: tracing
+  labels:
+    app: jaeger
+    component: agent
+spec:
+  selector:
+    matchLabels:
+      app: jaeger
+      component: agent
+  template:
+    metadata:
+      labels:
+        app: jaeger
+        component: agent
+    spec:
+      containers:
+      - name: jaeger-agent
+        image: jaegertracing/jaeger-agent:latest
+        imagePullPolicy: IfNotPresent
+        args:
+        - --reporter.grpc.host-port=jaeger-collector:14250
+        - --reporter.type=grpc
+        ports:
+        - containerPort: 5775
+          protocol: UDP
+          name: zipkin-compact
+        - containerPort: 6831
+          protocol: UDP
+          name: jaeger-compact
+          hostPort: 6831
+        - containerPort: 6832
+          protocol: UDP
+          name: jaeger-binary
+        - containerPort: 5778
+          name: configs
+          protocol: TCP
+        - containerPort: 14271
+          name: admin
+          protocol: TCP
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 14271
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 14271
+          initialDelaySeconds: 15
+          periodSeconds: 20
+
+---
+# ============================================
+# Services
+# ============================================
+
+# Jaeger Collector Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-collector
+  namespace: tracing
+  labels:
+    app: jaeger
+    component: collector
+spec:
+  type: ClusterIP
+  ports:
+  - port: 14250
+    targetPort: 14250
+    name: grpc
+  - port: 14268
+    targetPort: 14268
+    name: http
+  - port: 9411
+    targetPort: 9411
+    name: zipkin
+  - port: 4317
+    targetPort: 4317
+    name: otlp-grpc
+  - port: 4318
+    targetPort: 4318
+    name: otlp-http
+  - port: 14269
+    targetPort: 14269
+    name: admin
+  selector:
+    app: jaeger
+    component: collector
+
+---
+# Jaeger Query Service (NodePort for external access)
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-query
+  namespace: tracing
+  labels:
+    app: jaeger
+    component: query
+spec:
+  type: NodePort
+  ports:
+  - port: 16686
+    targetPort: 16686
+    nodePort: 30686
+    name: ui
+  - port: 16685
+    targetPort: 16685
+    name: grpc
+  selector:
+    app: jaeger
+    component: query
+
+---
+# Jaeger Agent Service (Headless)
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-agent
+  namespace: tracing
+  labels:
+    app: jaeger
+    component: agent
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - port: 5775
+    targetPort: 5775
+    protocol: UDP
+    name: zipkin-compact
+  - port: 6831
+    targetPort: 6831
+    protocol: UDP
+    name: jaeger-compact
+  - port: 6832
+    targetPort: 6832
+    protocol: UDP
+    name: jaeger-binary
+  - port: 5778
+    targetPort: 5778
+    name: configs
+  selector:
+    app: jaeger
+    component: agent
+
+
+
