@@ -25,6 +25,58 @@ kubectl apply -f 02-manticore.yaml
 kubectl apply -f 03-jaeger-clean.yaml
 ```
 
+## 🪁 部署 Kite 面板（zxh326/kite）
+
+Kite 项目地址：[`zxh326/kite`](https://github.com/zxh326/kite)
+
+> 说明：本仓库提供的 `06-kite.yaml` 用的是 **cluster-admin**（方便先跑起来）。生产环境请务必收紧权限。
+
+### 安装
+
+```bash
+kubectl apply -f 06-kite.yaml
+```
+
+### 访问方式
+
+- **NodePort（默认）**：`http://<任意节点IP>:30081`
+- **Port-forward（无需暴露端口）**
+
+```bash
+kubectl -n kube-system port-forward svc/kite 8080:8080
+```
+
+访问：`http://127.0.0.1:8080`
+
+## 🧭 部署 Kubernetes Dashboard（Web 面板）
+
+> 说明：这是 **Kubernetes Dashboard**（和上面的 Kite 不同，二选一/按需安装）。
+> 这里提供一个**开发/演示**用的 Dashboard 部署（带 `admin-user` 的 `cluster-admin` 权限）。生产环境请务必收紧 RBAC。
+
+### 安装
+
+```bash
+kubectl apply -f 05-kubernetes-dashboard.yaml
+```
+
+### 获取登录 Token
+
+```bash
+kubectl -n kubernetes-dashboard create token admin-user
+```
+
+### 访问方式
+
+- **NodePort（默认）**：`https://<任意节点IP>:30080`
+  - 浏览器会提示自签名证书不受信任，选择继续访问即可
+- **Port-forward（无需暴露端口）**
+
+```bash
+kubectl -n kubernetes-dashboard port-forward svc/kubernetes-dashboard 8443:443
+```
+
+访问：`https://127.0.0.1:8443`
+
 ## 📋 管理工具
 
 ### 主工具
