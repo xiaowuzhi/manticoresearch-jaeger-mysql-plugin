@@ -1,0 +1,31 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		}
+	],
+
+
+	"settings": {
+		
+		// "go.testFlags": ["-rod=\"show,slow=1s,trace\"", "-v", "--count=1"],
+		"go.testFlags": ["-v", "-count=1"],
+		"go.testEnvVars": {"-rod":"show,slow=1s,trace"},
+		// buildTags 只能是 Go build tags（逗号/空格分隔），不要写 -mod 这类 go flags
+		"go.buildTags": "ultra",
+		"go.toolsEnvVars": {
+			// 对齐你当前 go env：GOFLAGS=-mod=mod（并附加 tags）
+			"GOFLAGS": "-mod=mod -tags=ultra",
+			"GOPROXY": "https://goproxy.cn,direct",
+			"GOPRIVATE": "git.100tal.com",
+			"GONOSUMDB": "git.100tal.com",
+			"GONOPROXY": "git.100tal.com"
+		},
+		"gopls": { "ui.semanticTokens": true },
+		"go.formatTool": "gofumpt",
+		"go.inferGopath": true,
+		"terminal.integrated.defaultProfile.osx": "JavaScript Debug Terminal",
+		"editor.fontLigatures": false,
+	
+	},
+}
