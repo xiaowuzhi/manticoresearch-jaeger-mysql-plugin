@@ -3,422 +3,486 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ManticoreSearch SQL Query Tool</title>
+    <title>ManticoreSearch Query Tool</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --bg: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border: #30363d;
+            --text: #c9d1d9;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --success: #3fb950;
+            --warning: #d29922;
+            --error: #f85149;
         }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'SF Mono', 'Fira Code', 'Monaco', 'Menlo', monospace;
-            background: #0a0e14;
-            color: #b3b1ad;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
-            padding: 20px;
+            padding: 24px;
         }
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
+        .container { max-width: 900px; margin: 0 auto; }
         h1 {
-            color: #ffb454;
-            margin-bottom: 8px;
             font-size: 24px;
             font-weight: 600;
-        }
-        .subtitle {
-            color: #626a73;
-            margin-bottom: 30px;
-            font-size: 13px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
             margin-bottom: 8px;
-            color: #59c2ff;
-            font-weight: 500;
-            font-size: 13px;
-        }
-        input[type="text"] {
-            width: 100%;
-            padding: 12px 14px;
-            background: #1f2430;
-            border: 1px solid #2d3640;
-            border-radius: 6px;
-            color: #e6e1cf;
-            font-family: inherit;
-            font-size: 14px;
-            transition: border-color 0.2s;
-        }
-        input[type="text"]:focus {
-            outline: none;
-            border-color: #59c2ff;
-        }
-        textarea {
-            width: 100%;
-            padding: 14px;
-            background: #1f2430;
-            border: 1px solid #2d3640;
-            border-radius: 6px;
-            color: #e6e1cf;
-            font-family: inherit;
-            font-size: 14px;
-            resize: vertical;
-            min-height: 100px;
-            transition: border-color 0.2s;
-        }
-        textarea:focus {
-            outline: none;
-            border-color: #59c2ff;
-        }
-        .btn-row {
             display: flex;
+            align-items: center;
             gap: 10px;
-            flex-wrap: wrap;
         }
-        button {
-            background: linear-gradient(135deg, #59c2ff 0%, #73d0ff 100%);
-            color: #0a0e14;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.15s, box-shadow 0.15s;
-            font-family: inherit;
-        }
-        button:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(89, 194, 255, 0.3);
-        }
-        button:active {
-            transform: translateY(0);
-        }
-        .btn-secondary {
-            background: #2d3640;
-            color: #b3b1ad;
-        }
-        .btn-secondary:hover {
-            background: #3d4650;
-            box-shadow: none;
-        }
-        .btn-success {
-            background: linear-gradient(135deg, #aad94c 0%, #c2e085 100%);
-        }
-        .btn-success:hover {
-            box-shadow: 0 4px 12px rgba(170, 217, 76, 0.3);
-        }
-        .examples {
-            margin: 20px 0;
+        .subtitle { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; }
+        
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
             padding: 16px;
-            background: #1f2430;
-            border-radius: 6px;
-            border-left: 3px solid #ffb454;
+            margin-bottom: 16px;
         }
-        .examples h3 {
-            margin-bottom: 12px;
-            color: #ffb454;
+        .card-header {
             font-size: 14px;
             font-weight: 500;
-        }
-        .example-btn {
-            display: inline-block;
-            margin: 4px 6px 4px 0;
-            padding: 6px 12px;
-            background: #2d3640;
-            color: #b3b1ad;
-            border: none;
-            border-radius: 4px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: background 0.2s;
-            font-family: inherit;
-        }
-        .example-btn:hover {
-            background: #3d4650;
-            color: #e6e1cf;
-        }
-        .curl-box {
-            margin-top: 20px;
-            padding: 16px;
-            background: #1f2430;
-            border-radius: 6px;
-            border: 1px solid #2d3640;
-        }
-        .curl-box h3 {
-            color: #aad94c;
-            font-size: 14px;
+            color: var(--text-muted);
             margin-bottom: 12px;
             display: flex;
             align-items: center;
             gap: 8px;
         }
-        .curl-cmd {
-            background: #0d1017;
-            padding: 14px;
-            border-radius: 4px;
-            font-size: 13px;
-            color: #e6e1cf;
-            overflow-x: auto;
-            white-space: pre-wrap;
-            word-break: break-all;
-            margin-bottom: 12px;
-            border: 1px solid #2d3640;
-        }
-        .result-section {
-            margin-top: 24px;
-            padding: 16px;
-            background: #1f2430;
+        
+        .input-group { display: flex; gap: 8px; margin-bottom: 12px; }
+        input, textarea {
+            flex: 1;
+            padding: 10px 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
             border-radius: 6px;
-            border: 1px solid #2d3640;
+            color: var(--text);
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 13px;
         }
-        .result-section h3 {
-            color: #59c2ff;
-            font-size: 14px;
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        textarea { min-height: 80px; resize: vertical; }
+        
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+        .btn-primary:hover { filter: brightness(1.1); }
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover { background: var(--border); }
+        .btn-success { background: var(--success); color: #fff; }
+        
+        .quick-btns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
             margin-bottom: 12px;
         }
-        #result {
-            margin-top: 12px;
-            padding: 14px;
-            background: #0d1017;
+        .quick-btn {
+            padding: 6px 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
             border-radius: 4px;
+            color: var(--text-muted);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .quick-btn:hover {
+            background: var(--border);
+            color: var(--text);
+        }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 6px;
             font-size: 13px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            max-height: 400px;
-            overflow-y: auto;
-            display: none;
-            border: 1px solid #2d3640;
+            margin-bottom: 12px;
         }
-        #result.show {
-            display: block;
-        }
-        .table-view {
-            margin-top: 12px;
-            overflow-x: auto;
-            display: none;
-        }
-        .table-view.show {
-            display: block;
-        }
-        .table-view table {
+        .status.loading { background: rgba(88, 166, 255, 0.1); color: var(--accent); }
+        .status.success { background: rgba(63, 185, 80, 0.1); color: var(--success); }
+        .status.error { background: rgba(248, 81, 73, 0.1); color: var(--error); }
+        .status.hidden { display: none; }
+        
+        .result-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
+            margin-top: 12px;
         }
-        .table-view th {
-            background: #2d3640;
-            color: #ffb454;
-            padding: 10px 14px;
+        .result-table th {
+            background: var(--bg-tertiary);
+            padding: 10px 12px;
             text-align: left;
             font-weight: 500;
-            border: 1px solid #3d4650;
+            color: var(--warning);
+            border: 1px solid var(--border);
         }
-        .table-view td {
-            padding: 10px 14px;
-            border: 1px solid #2d3640;
-            color: #e6e1cf;
+        .result-table td {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
-        .table-view tr:nth-child(even) {
-            background: #151a22;
-        }
-        .copied {
-            color: #aad94c !important;
-        }
-        .status-bar {
-            margin-top: 16px;
-            padding: 10px 14px;
-            background: #151a22;
-            border-radius: 4px;
+        .result-table tr:hover td { background: var(--bg-tertiary); }
+        
+        .json-view {
+            background: var(--bg);
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'SF Mono', Monaco, monospace;
             font-size: 12px;
-            color: #626a73;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+        }
+        
+        .tabs {
             display: flex;
-            justify-content: space-between;
+            gap: 4px;
+            margin-bottom: 12px;
         }
-        .status-ok { color: #aad94c; }
-        .status-error { color: #f07178; }
-        .hint {
+        .tab {
+            padding: 8px 16px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 13px;
+            cursor: pointer;
+            border-radius: 6px;
+        }
+        .tab.active {
+            background: var(--bg-tertiary);
+            color: var(--text);
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .row-count {
+            color: var(--text-muted);
             font-size: 12px;
-            color: #626a73;
-            margin-top: 6px;
+            margin-top: 8px;
+        }
+        
+        .mode-switch {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .mode-switch input { width: auto; flex: none; }
+        
+        .curl-box {
+            background: var(--bg);
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 12px;
+            border: 1px solid var(--border);
+            margin: 12px 0;
+            word-break: break-all;
+        }
+        
+        .help-text {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 8px;
+            padding: 8px;
+            background: rgba(210, 153, 34, 0.1);
+            border-radius: 4px;
+            border-left: 3px solid var(--warning);
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔍 ManticoreSearch SQL Query Tool</h1>
-        <p class="subtitle">本地版 - 生成 curl 命令，粘贴结果即可查看</p>
+        <h1>🔍 ManticoreSearch Query Tool</h1>
+        <p class="subtitle">本地文件直接打开，支持直接执行或 curl 命令</p>
         
-        <div class="form-group">
-            <label>📡 API 地址:</label>
-            <input type="text" id="apiUrl" value="http://localhost:9308/sql">
-        </div>
-        
-        <div class="form-group">
-            <label>📝 SQL 查询:</label>
-            <textarea id="sql" placeholder="输入 SQL 查询语句">SHOW TABLES</textarea>
-        </div>
-        
-        <div class="examples">
-            <h3>💡 示例查询:</h3>
-            <button class="example-btn" onclick="setQuery('SHOW TABLES')">显示所有表</button>
-            <button class="example-btn" onclick="setQuery('SELECT * FROM jaeger_spans LIMIT 10')">查询 spans</button>
-            <button class="example-btn" onclick="setQuery('SELECT COUNT(*) FROM jaeger_spans')">统计数量</button>
-            <button class="example-btn" onclick="setQuery('SELECT service_name, COUNT(*) as cnt FROM jaeger_spans GROUP BY service_name')">按服务分组</button>
-            <button class="example-btn" onclick="setQuery('DESCRIBE jaeger_spans')">表结构</button>
-            <button class="example-btn" onclick="setQuery('SELECT * FROM jaeger_index LIMIT 5')">Jaeger Index</button>
-        </div>
-
-        <div class="curl-box">
-            <h3>⚡ 步骤 1: 复制并执行此命令</h3>
-            <div class="curl-cmd" id="curlCmd">curl -s -X POST http://localhost:9308/sql -d "mode=raw&amp;query=SHOW TABLES"</div>
-            <div class="btn-row">
-                <button onclick="copyCurl()">📋 复制命令</button>
-                <button class="btn-secondary" onclick="updateCurl()">🔄 更新命令</button>
+        <!-- 连接设置 -->
+        <div class="card">
+            <div class="card-header">⚙️ 连接设置</div>
+            <div class="input-group">
+                <input type="text" id="endpoint" value="/api/sql" placeholder="代理端点（直接执行用）">
+                <button class="btn btn-secondary" onclick="testConnection()">测试连接</button>
+            </div>
+            <div class="input-group" style="margin-top: 8px;">
+                <input type="text" id="curlEndpoint" value="http://localhost:30399/sql" placeholder="ManticoreSearch 地址（Curl 用）">
+            </div>
+            <div class="mode-switch">
+                <input type="checkbox" id="directMode" checked onchange="updateMode()">
+                <label for="directMode">直接执行模式（通过代理服务器）</label>
             </div>
         </div>
-
-        <div class="result-section">
-            <h3>📥 步骤 2: 粘贴返回的 JSON 结果</h3>
-            <textarea id="jsonInput" placeholder='将 curl 返回的 JSON 粘贴到这里，例如:
-[{"columns":[{"Index":{"type":"string"}}],"data":[{"Index":"test"}],"total":1,"error":"","warning":""}]'></textarea>
-            <div class="btn-row" style="margin-top: 12px;">
-                <button class="btn-success" onclick="parseResult()">✨ 解析并显示结果</button>
-                <button class="btn-secondary" onclick="clearResult()">🗑️ 清除</button>
+        
+        <!-- SQL 输入 -->
+        <div class="card">
+            <div class="card-header">📝 SQL 查询</div>
+            <div class="quick-btns">
+                <button class="quick-btn" onclick="setSQL('SHOW TABLES')">显示表</button>
+                <button class="quick-btn" onclick="setSQL('DESCRIBE jaeger_spans')">表结构</button>
+                <button class="quick-btn" onclick="setSQL('SELECT * FROM jaeger_spans LIMIT 10')">查询数据</button>
+                <button class="quick-btn" onclick="setSQL('SELECT COUNT(*) FROM jaeger_spans')">统计数量</button>
+                <button class="quick-btn" onclick="setSQL(`SELECT * FROM jaeger_spans WHERE MATCH('北京')`)">🔍 搜索: 北京</button>
+                <button class="quick-btn" onclick="setSQL(`SELECT * FROM jaeger_spans WHERE MATCH('订单')`)">🔍 搜索: 订单</button>
+                <button class="quick-btn" onclick="setSQL(`SELECT * FROM jaeger_spans WHERE MATCH('错误')`)">🔍 搜索: 错误</button>
+                <button class="quick-btn" onclick="setSQL('SELECT service_name, COUNT(*) as cnt FROM jaeger_spans GROUP BY service_name')">按服务分组</button>
+            </div>
+            <textarea id="sql" placeholder="输入 SQL 语句...">SHOW TABLES</textarea>
+            <div style="margin-top: 12px; display: flex; gap: 8px;">
+                <button class="btn btn-primary" onclick="executeQuery()">▶️ 执行</button>
+                <button class="btn btn-secondary" onclick="clearAll()">🗑️ 清除</button>
             </div>
         </div>
-
-        <div id="tableView" class="table-view"></div>
-        <pre id="result"></pre>
         
-        <div class="status-bar">
-            <span id="statusText">就绪</span>
-            <span id="rowCount"></span>
+        <!-- Curl 模式 -->
+        <div class="card" id="curlCard" style="display: none;">
+            <div class="card-header">📋 Curl 命令模式</div>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+                如果直接执行失败（CORS 问题），请复制下面的 curl 命令到终端执行：
+            </p>
+            <div class="curl-box" id="curlCmd"></div>
+            <button class="btn btn-secondary" onclick="copyCurl()">📋 复制命令</button>
+            
+            <div style="margin-top: 16px;">
+                <div class="card-header">📥 粘贴结果</div>
+                <textarea id="curlResult" placeholder="将 curl 返回的 JSON 粘贴到这里..."></textarea>
+                <button class="btn btn-success" style="margin-top: 8px;" onclick="parseCurlResult()">解析结果</button>
+            </div>
+        </div>
+        
+        <!-- 状态 -->
+        <div class="status hidden" id="status"></div>
+        
+        <!-- 结果 -->
+        <div class="card" id="resultCard" style="display: none;">
+            <div class="card-header">📊 查询结果</div>
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('table')">表格</button>
+                <button class="tab" onclick="switchTab('json')">JSON</button>
+            </div>
+            <div class="tab-content active" id="tableTab">
+                <div style="overflow-x: auto;">
+                    <table class="result-table" id="resultTable"></table>
+                </div>
+                <div class="row-count" id="rowCount"></div>
+            </div>
+            <div class="tab-content" id="jsonTab">
+                <div class="json-view" id="jsonView"></div>
+            </div>
+        </div>
+        
+        <div class="help-text">
+            💡 <strong>使用方法：</strong>运行 <code style="background: var(--bg); padding: 2px 6px; border-radius: 3px;">./open-query-tool.sh</code> 启动服务器，
+            然后访问 <code style="background: var(--bg); padding: 2px 6px; border-radius: 3px;">http://localhost:8080/manticore-query.html</code>
         </div>
     </div>
-    
+
     <script>
-        // 初始化
-        updateCurl();
+        let directMode = true;
         
-        // 监听输入变化自动更新 curl 命令
-        document.getElementById('sql').addEventListener('input', updateCurl);
-        document.getElementById('apiUrl').addEventListener('input', updateCurl);
-        
-        function setQuery(query) {
-            document.getElementById('sql').value = query;
-            updateCurl();
+        function updateMode() {
+            directMode = document.getElementById('directMode').checked;
+            document.getElementById('curlCard').style.display = directMode ? 'none' : 'block';
+            updateCurlCmd();
         }
         
-        function updateCurl() {
-            const apiUrl = document.getElementById('apiUrl').value;
+        function setSQL(sql) {
+            document.getElementById('sql').value = sql;
+            updateCurlCmd();
+        }
+        
+        function updateCurlCmd() {
+            const curlEndpoint = document.getElementById('curlEndpoint').value;
             const sql = document.getElementById('sql').value;
-            const encoded = encodeURIComponent(sql);
-            const cmd = `curl -s -X POST ${apiUrl} -d "mode=raw&query=${encoded}"`;
+            const cmd = `curl -s -X POST '${curlEndpoint}' -d 'mode=raw&query=${encodeURIComponent(sql)}'`;
             document.getElementById('curlCmd').textContent = cmd;
         }
         
         function copyCurl() {
             const cmd = document.getElementById('curlCmd').textContent;
             navigator.clipboard.writeText(cmd).then(() => {
-                const btn = event.target;
-                const originalText = btn.textContent;
-                btn.textContent = '✅ 已复制!';
-                btn.classList.add('copied');
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                    btn.classList.remove('copied');
-                }, 1500);
-            }).catch(() => {
-                // 降级方案：选中文本
-                const range = document.createRange();
-                range.selectNode(document.getElementById('curlCmd'));
-                window.getSelection().removeAllRanges();
-                window.getSelection().addRange(range);
-                setStatus('请按 Ctrl+C 复制', 'error');
+                showStatus('已复制到剪贴板', 'success');
             });
         }
         
-        function parseResult() {
-            const input = document.getElementById('jsonInput').value.trim();
-            const resultDiv = document.getElementById('result');
-            const tableView = document.getElementById('tableView');
+        function showStatus(msg, type) {
+            const el = document.getElementById('status');
+            el.textContent = msg;
+            el.className = 'status ' + type;
+            if (type !== 'loading') {
+                setTimeout(() => el.classList.add('hidden'), 3000);
+            }
+        }
+        
+        async function testConnection() {
+            const endpoint = document.getElementById('endpoint').value;
+            showStatus('测试连接中...', 'loading');
             
+            try {
+                const resp = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'mode=raw&query=SHOW TABLES'
+                });
+                if (resp.ok) {
+                    showStatus('✅ 连接成功！支持直接执行模式', 'success');
+                } else {
+                    showStatus('❌ 连接失败: ' + resp.status, 'error');
+                }
+            } catch (e) {
+                showStatus('❌ 连接失败 (CORS?): ' + e.message + ' - 请使用 Curl 模式', 'error');
+                document.getElementById('directMode').checked = false;
+                updateMode();
+            }
+        }
+        
+        async function executeQuery() {
+            const endpoint = document.getElementById('endpoint').value;
+            const sql = document.getElementById('sql').value;
+            
+            if (!sql.trim()) {
+                showStatus('请输入 SQL 语句', 'error');
+                return;
+            }
+            
+            updateCurlCmd();
+            
+            if (!directMode) {
+                showStatus('请复制 curl 命令到终端执行，然后粘贴结果', 'loading');
+                return;
+            }
+            
+            showStatus('执行中...', 'loading');
+            
+            try {
+                const resp = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'mode=raw&query=' + encodeURIComponent(sql)
+                });
+                
+                if (!resp.ok) {
+                    throw new Error('HTTP ' + resp.status);
+                }
+                
+                const data = await resp.json();
+                displayResult(data);
+                showStatus('✅ 执行成功', 'success');
+            } catch (e) {
+                showStatus('❌ 执行失败: ' + e.message + ' - 尝试使用 Curl 模式', 'error');
+                document.getElementById('directMode').checked = false;
+                updateMode();
+            }
+        }
+        
+        function parseCurlResult() {
+            const input = document.getElementById('curlResult').value.trim();
             if (!input) {
-                setStatus('请先粘贴 JSON 结果', 'error');
+                showStatus('请粘贴 curl 返回的 JSON', 'error');
                 return;
             }
             
             try {
                 const data = JSON.parse(input);
-                
-                // 显示 JSON
-                resultDiv.textContent = JSON.stringify(data, null, 2);
-                resultDiv.classList.add('show');
-                
-                // 尝试显示表格
-                if (Array.isArray(data) && data.length > 0 && data[0].data) {
-                    const result = data[0];
-                    if (result.error) {
-                        setStatus('查询错误: ' + result.error, 'error');
-                        tableView.classList.remove('show');
-                        return;
-                    }
-                    
-                    if (result.data && result.data.length > 0) {
-                        renderTable(result.columns, result.data);
-                        tableView.classList.add('show');
-                        setStatus('解析成功', 'ok');
-                        document.getElementById('rowCount').textContent = `共 ${result.data.length} 行`;
-                    } else {
-                        tableView.classList.remove('show');
-                        setStatus('查询成功，无数据返回', 'ok');
-                        document.getElementById('rowCount').textContent = '';
-                    }
-                } else {
-                    tableView.classList.remove('show');
-                    setStatus('JSON 解析成功', 'ok');
-                    document.getElementById('rowCount').textContent = '';
-                }
+                displayResult(data);
+                showStatus('✅ 解析成功', 'success');
             } catch (e) {
-                resultDiv.textContent = '解析错误: ' + e.message + '\n\n原始内容:\n' + input;
-                resultDiv.classList.add('show');
-                tableView.classList.remove('show');
-                setStatus('JSON 解析失败', 'error');
+                showStatus('❌ JSON 解析失败: ' + e.message, 'error');
+            }
+        }
+        
+        function displayResult(data) {
+            document.getElementById('resultCard').style.display = 'block';
+            
+            // JSON 视图
+            document.getElementById('jsonView').textContent = JSON.stringify(data, null, 2);
+            
+            // 表格视图
+            const tableEl = document.getElementById('resultTable');
+            
+            if (Array.isArray(data) && data.length > 0 && data[0].data) {
+                const result = data[0];
+                
+                if (result.error) {
+                    tableEl.innerHTML = `<tr><td style="color: var(--error);">错误: ${result.error}</td></tr>`;
+                    document.getElementById('rowCount').textContent = '';
+                    return;
+                }
+                
+                const columns = result.columns || [];
+                const rows = result.data || [];
+                const colNames = columns.map(c => Object.keys(c)[0]);
+                
+                let html = '<thead><tr>';
+                colNames.forEach(name => {
+                    html += `<th>${escapeHtml(name)}</th>`;
+                });
+                html += '</tr></thead><tbody>';
+                
+                rows.forEach(row => {
+                    html += '<tr>';
+                    colNames.forEach(name => {
+                        let val = row[name];
+                        if (val === null) val = '<null>';
+                        else if (typeof val === 'object') val = JSON.stringify(val);
+                        html += `<td title="${escapeHtml(String(val))}">${escapeHtml(String(val))}</td>`;
+                    });
+                    html += '</tr>';
+                });
+                html += '</tbody>';
+                
+                tableEl.innerHTML = html;
+                document.getElementById('rowCount').textContent = `共 ${rows.length} 行`;
+            } else {
+                tableEl.innerHTML = '<tr><td>无数据</td></tr>';
                 document.getElementById('rowCount').textContent = '';
             }
         }
         
-        function renderTable(columns, data) {
-            const tableView = document.getElementById('tableView');
-            
-            // 提取列名
-            const colNames = columns.map(col => Object.keys(col)[0]);
-            
-            let html = '<table><thead><tr>';
-            colNames.forEach(name => {
-                html += `<th>${escapeHtml(name)}</th>`;
-            });
-            html += '</tr></thead><tbody>';
-            
-            data.forEach(row => {
-                html += '<tr>';
-                colNames.forEach(name => {
-                    const value = row[name];
-                    const displayValue = value === null ? '<null>' : 
-                                        typeof value === 'object' ? JSON.stringify(value) : 
-                                        String(value);
-                    html += `<td>${escapeHtml(displayValue)}</td>`;
-                });
-                html += '</tr>';
-            });
-            
-            html += '</tbody></table>';
-            tableView.innerHTML = html;
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.tab:nth-child(${tab === 'table' ? 1 : 2})`).classList.add('active');
+            document.getElementById(tab + 'Tab').classList.add('active');
+        }
+        
+        function clearAll() {
+            document.getElementById('sql').value = '';
+            document.getElementById('curlResult').value = '';
+            document.getElementById('resultCard').style.display = 'none';
+            document.getElementById('status').classList.add('hidden');
         }
         
         function escapeHtml(text) {
@@ -427,20 +491,17 @@
             return div.innerHTML;
         }
         
-        function clearResult() {
-            document.getElementById('jsonInput').value = '';
-            document.getElementById('result').classList.remove('show');
-            document.getElementById('tableView').classList.remove('show');
-            document.getElementById('tableView').innerHTML = '';
-            setStatus('已清除', 'ok');
-            document.getElementById('rowCount').textContent = '';
-        }
+        // 初始化
+        updateCurlCmd();
+        document.getElementById('sql').addEventListener('input', updateCurlCmd);
+        document.getElementById('curlEndpoint').addEventListener('input', updateCurlCmd);
         
-        function setStatus(text, type) {
-            const el = document.getElementById('statusText');
-            el.textContent = text;
-            el.className = type === 'ok' ? 'status-ok' : type === 'error' ? 'status-error' : '';
-        }
+        // 快捷键
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                executeQuery();
+            }
+        });
     </script>
 </body>
 </html>
