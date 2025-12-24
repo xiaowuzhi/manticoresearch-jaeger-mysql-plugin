@@ -7,6 +7,19 @@ metadata:
   namespace: tracing
 data:
   manticore.conf: |
+    # ============================================
+    # 通用设置 (Common Settings)
+    # ============================================
+    common {
+        # 中文分词配置
+        # CJK: Chinese, Japanese, Korean
+        # ngram_len=1 表示单字切分（适合中文）
+        # ngram_len=2 表示双字切分
+    }
+    
+    # ============================================
+    # 搜索守护进程配置
+    # ============================================
     searchd {
         listen = 9306:mysql
         listen = 9308:http
