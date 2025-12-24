@@ -115,7 +115,7 @@ metadata:
   labels:
     app: jaeger-mysql-plugin
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: jaeger-mysql-plugin
