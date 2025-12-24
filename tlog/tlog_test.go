@@ -106,6 +106,49 @@ func TestChineseContent(t *testing.T) {
 	t.Log("中文测试完成 - 请检查 Jaeger UI 和 ManticoreSearch")
 }
 
+// TestSpanRefs 测试 span 父子关系（refs 字段）
+func TestSpanRefs(t *testing.T) {
+	Init(Config{
+		ServiceName: "refs-test",
+		Endpoint:    "localhost:30317",
+	})
+	defer Shutdown(context.Background())
+
+	// 1. Root span（没有 refs）
+	ctx, rootSpan := Log.Start(context.Background(), "HTTP请求入口")
+	Log.Info(ctx, "收到请求", "path", "/api/orders")
+
+	// 2. Child span（有 refs，指向 root）
+	ctx2, dbSpan := Log.Start(ctx, "数据库查询")
+	Log.SQL(ctx2, "SELECT * FROM orders", "5ms")
+	Log.End(dbSpan)
+
+	// 3. 另一个 child span
+	ctx3, cacheSpan := Log.Start(ctx, "缓存查询")
+	Log.Info(ctx3, "缓存命中", "key", "order:123")
+	Log.End(cacheSpan)
+
+	// 4. 嵌套 child（有 refs，指向 dbSpan）
+	ctx4, subSpan := Log.Start(ctx2, "序列化结果")
+	Log.Info(ctx4, "JSON 序列化完成")
+	Log.End(subSpan)
+
+	Log.End(rootSpan)
+
+	time.Sleep(500 * time.Millisecond)
+	fmt.Println("\n========================================")
+	fmt.Println("✅ Span Refs 测试完成")
+	fmt.Println("========================================")
+	fmt.Println("Span 结构:")
+	fmt.Println("  HTTP请求入口 (root, refs=null)")
+	fmt.Println("    ├── 数据库查询 (refs=[root])")
+	fmt.Println("    │     └── 序列化结果 (refs=[数据库查询])")
+	fmt.Println("    └── 缓存查询 (refs=[root])")
+	fmt.Println("")
+	fmt.Println("在 Jaeger UI 可以看到完整的调用链")
+	fmt.Println("========================================")
+}
+
 // TestSearchableContent 生成可搜索的测试数据
 func TestSearchableContent(t *testing.T) {
 	Init(Config{

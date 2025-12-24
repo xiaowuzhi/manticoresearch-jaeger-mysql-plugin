@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -228,17 +229,36 @@ func (s *MySQLStore) writeBatch(ctx context.Context, spans []*model.Span) error 
 }
 
 // marshalJSON 使用 buffer pool 优化 JSON 序列化
+// 对于 nil 或空值，返回 "[]" 或 "{}" 而不是 "null"，保持一致性
 func marshalJSON(v interface{}) string {
 	if v == nil {
-		return "null"
+		return "[]"
 	}
+
+	// 使用反射检查空切片/空 map
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.Slice, reflect.Array:
+		if rv.IsNil() || rv.Len() == 0 {
+			return "[]"
+		}
+	case reflect.Map:
+		if rv.IsNil() || rv.Len() == 0 {
+			return "{}"
+		}
+	case reflect.Ptr:
+		if rv.IsNil() {
+			return "{}"
+		}
+	}
+
 	buf := getBuffer()
 	defer putBuffer(buf)
 
 	encoder := json.NewEncoder(buf)
 	encoder.SetEscapeHTML(false)
 	if err := encoder.Encode(v); err != nil {
-		return "null"
+		return "[]"
 	}
 	// Remove trailing newline from Encode
 	result := buf.Bytes()
