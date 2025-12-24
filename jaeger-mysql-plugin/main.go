@@ -73,8 +73,8 @@ func main() {
 
 	// 配置连接池 - 优化后的设置
 	// 根据批量写入和并发查询需求调整
-	db.SetMaxOpenConns(10)             // 增加连接数以支持批量操作
-	db.SetMaxIdleConns(5)              // 保持足够的空闲连接
+	db.SetMaxOpenConns(10)                 // 增加连接数以支持批量操作
+	db.SetMaxIdleConns(5)                  // 保持足够的空闲连接
 	db.SetConnMaxLifetime(5 * time.Minute) // 连接生存时间
 	db.SetConnMaxIdleTime(1 * time.Minute) // 空闲连接超时
 
@@ -122,10 +122,10 @@ func main() {
 	go func() {
 		<-sigChan
 		logger.Info().Msg("Shutting down...")
-		
+
 		// 优雅关闭 gRPC 服务器
 		grpcServer.GracefulStop()
-		
+
 		// 关闭存储（刷新批量写入缓冲区）
 		if err := store.Close(); err != nil {
 			logger.Error().Err(err).Msg("Failed to close store")
@@ -148,10 +148,10 @@ func initDatabase(db *sql.DB, logger zerolog.Logger) error {
 	// 创建 ManticoreSearch RT index（支持中文分词）
 	// 注意：GROUP BY 只能用于 attribute 字段，不能用于 text 字段
 	// CJK 中文分词配置：
-	//   - charset_table = 'cjk, non_cjk': 支持中日韩 + 英文字符
 	//   - ngram_len = '1': 单字切分，适合中文搜索
 	//   - ngram_chars = 'cjk': 对 CJK 字符应用 ngram 分词
 	//   - min_word_len = '1': 允许单字搜索
+	// 注意：ngram_chars 和 charset_table 不能同时指定相同字符集
 	createTableSQL := `
 	CREATE TABLE IF NOT EXISTS jaeger_spans (
 		trace_id string attribute,
@@ -165,7 +165,7 @@ func initDatabase(db *sql.DB, logger zerolog.Logger) error {
 		refs text,
 		process text,
 		service_name string attribute
-	) charset_table='cjk, non_cjk' ngram_len='1' ngram_chars='cjk' min_word_len='1'
+	) ngram_len='1' ngram_chars='cjk' min_word_len='1'
 	`
 
 	var err error
