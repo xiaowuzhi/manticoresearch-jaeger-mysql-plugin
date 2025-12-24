@@ -184,7 +184,12 @@ spec:
     app: jaeger-mysql-plugin
 EOF
 
-echo -e "${GREEN}✓ MySQL 插件已部署${NC}"
+echo -e "${GREEN}✓ MySQL 插件配置已应用${NC}"
+
+# 强制重启以加载新的二进制文件
+echo "  触发滚动更新..."
+kubectl rollout restart deployment/jaeger-mysql-plugin -n tracing
+echo -e "${GREEN}✓ MySQL 插件滚动更新已触发${NC}"
 echo ""
 
 # ============================================================
