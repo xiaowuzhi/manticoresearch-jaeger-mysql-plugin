@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -23,6 +24,28 @@ var (
 	mysqlUser = flag.String("mysql-user", "root", "MySQL username")
 	mysqlPass = flag.String("mysql-pass", "", "MySQL password")
 )
+
+// ====================
+// 环境变量辅助函数
+// ====================
+
+func getEnvInt(key string, defaultVal int) int {
+	if v := os.Getenv(key); v != "" {
+		if i, err := strconv.Atoi(v); err == nil {
+			return i
+		}
+	}
+	return defaultVal
+}
+
+func getEnvDuration(key string, defaultVal time.Duration) time.Duration {
+	if v := os.Getenv(key); v != "" {
+		if d, err := time.ParseDuration(v); err == nil {
+			return d
+		}
+	}
+	return defaultVal
+}
 
 func main() {
 	flag.Parse()
@@ -71,12 +94,16 @@ func main() {
 	}
 	defer db.Close()
 
-	// 配置连接池 - 优化后的设置
-	// 根据批量写入和并发查询需求调整
-	db.SetMaxOpenConns(10)                 // 增加连接数以支持批量操作
-	db.SetMaxIdleConns(5)                  // 保持足够的空闲连接
-	db.SetConnMaxLifetime(5 * time.Minute) // 连接生存时间
-	db.SetConnMaxIdleTime(1 * time.Minute) // 空闲连接超时
+	// 配置连接池 - 支持环境变量覆盖
+	maxOpenConns := getEnvInt("DB_MAX_OPEN_CONNS", 10)
+	maxIdleConns := getEnvInt("DB_MAX_IDLE_CONNS", 5)
+	connMaxLifetime := getEnvDuration("DB_CONN_MAX_LIFETIME", 5*time.Minute)
+	connMaxIdleTime := getEnvDuration("DB_CONN_MAX_IDLE_TIME", 1*time.Minute)
+
+	db.SetMaxOpenConns(maxOpenConns)
+	db.SetMaxIdleConns(maxIdleConns)
+	db.SetConnMaxLifetime(connMaxLifetime)
+	db.SetConnMaxIdleTime(connMaxIdleTime)
 
 	// 测试连接
 	if err := db.Ping(); err != nil {
@@ -84,7 +111,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger.Info().Int("max_open_conns", 10).Int("max_idle_conns", 5).Msg("Successfully connected to MySQL")
+	logger.Info().
+		Int("max_open_conns", maxOpenConns).
+		Int("max_idle_conns", maxIdleConns).
+		Dur("conn_max_lifetime", connMaxLifetime).
+		Msg("Successfully connected to MySQL")
 
 	// 初始化数据库表
 	if err := initDatabase(db, logger); err != nil {
