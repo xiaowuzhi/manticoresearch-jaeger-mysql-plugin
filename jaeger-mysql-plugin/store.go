@@ -650,7 +650,7 @@ func (r *MySQLSpanReader) getTracesByIDs(ctx context.Context, traceIDs []string)
 			   start_time, duration, tags, logs, refs, process, service_name
 		FROM jaeger_spans
 		WHERE trace_id IN (%s)
-		ORDER BY trace_id, start_time ASC
+		ORDER BY trace_id ASC, start_time ASC
 	`, strings.Join(placeholders, ", "))
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
