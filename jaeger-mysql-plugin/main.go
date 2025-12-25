@@ -115,7 +115,7 @@ func main() {
 		Int("max_open_conns", maxOpenConns).
 		Int("max_idle_conns", maxIdleConns).
 		Dur("conn_max_lifetime", connMaxLifetime).
-		Msg("Successfully connected to MySQL")
+		Msg("Successfully connected to MySQL v004")
 
 	// 初始化数据库表
 	if err := initDatabase(db, logger); err != nil {
