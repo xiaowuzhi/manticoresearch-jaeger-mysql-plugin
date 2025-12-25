@@ -1,101 +1,101 @@
----
-# Jaeger MySQL Storage Plugin Deployment
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: jaeger-mysql-plugin
-  namespace: tracing
-  labels:
-    app: jaeger-mysql-plugin
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: jaeger-mysql-plugin
-  template:
-    metadata:
-      labels:
-        app: jaeger-mysql-plugin
-    spec:
-      containers:
-      - name: plugin
-        image: alpine:latest
-        command:
-        - /bin/sh
-        - -c
-        - |
-          # 设置文件描述符限制，避免 "too many open files" 错误
-          ulimit -n 65536
-          exec /app/jaeger-mysql-plugin \
-            --grpc-addr=:17271 \
-            --mysql-addr=manticore:9306 \
-            --mysql-db= \
-            --mysql-user=root \
-            --mysql-pass=
-        ports:
-        - containerPort: 17271
-          name: grpc
-          protocol: TCP
-        volumeMounts:
-        - name: binary
-          mountPath: /app
-          readOnly: true
-        resources:
-          requests:
-            memory: "128Mi"
-            cpu: "100m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
-        securityContext:
-          # 允许设置更高的资源限制
-          runAsNonRoot: false
-          runAsUser: 0
-          capabilities:
-            add:
-            - SYS_RESOURCE
-        livenessProbe:
-          tcpSocket:
-            port: 17271
-          initialDelaySeconds: 10
-          periodSeconds: 10
-        readinessProbe:
-          tcpSocket:
-            port: 17271
-          initialDelaySeconds: 5
-          periodSeconds: 5
-      volumes:
-      - name: binary
-        hostPath:
-          path: /Users/tal/dock/goutils/k3s/lianlu/jaeger-mysql-plugin
-          type: Directory
+# ---
+# # Jaeger MySQL Storage Plugin Deployment
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: jaeger-mysql-plugin
+#   namespace: tracing
+#   labels:
+#     app: jaeger-mysql-plugin
+# spec:
+#   replicas: 2
+#   selector:
+#     matchLabels:
+#       app: jaeger-mysql-plugin
+#   template:
+#     metadata:
+#       labels:
+#         app: jaeger-mysql-plugin
+#     spec:
+#       containers:
+#       - name: plugin
+#         image: alpine:latest
+#         command:
+#         - /bin/sh
+#         - -c
+#         - |
+#           # 设置文件描述符限制，避免 "too many open files" 错误
+#           ulimit -n 65536
+#           exec /app/jaeger-mysql-plugin \
+#             --grpc-addr=:17271 \
+#             --mysql-addr=manticore:9306 \
+#             --mysql-db= \
+#             --mysql-user=root \
+#             --mysql-pass=
+#         ports:
+#         - containerPort: 17271
+#           name: grpc
+#           protocol: TCP
+#         volumeMounts:
+#         - name: binary
+#           mountPath: /app
+#           readOnly: true
+#         resources:
+#           requests:
+#             memory: "128Mi"
+#             cpu: "100m"
+#           limits:
+#             memory: "512Mi"
+#             cpu: "500m"
+#         securityContext:
+#           # 允许设置更高的资源限制
+#           runAsNonRoot: false
+#           runAsUser: 0
+#           capabilities:
+#             add:
+#             - SYS_RESOURCE
+#         livenessProbe:
+#           tcpSocket:
+#             port: 17271
+#           initialDelaySeconds: 10
+#           periodSeconds: 10
+#         readinessProbe:
+#           tcpSocket:
+#             port: 17271
+#           initialDelaySeconds: 5
+#           periodSeconds: 5
+#       volumes:
+#       - name: binary
+#         hostPath:
+#           path: /Users/tal/dock/goutils/k3s/lianlu/jaeger-mysql-plugin
+#           type: Directory
 
----
-# Service for MySQL Storage Plugin
-apiVersion: v1
-kind: Service
-metadata:
-  name: jaeger-mysql-plugin
-  namespace: tracing
-  labels:
-    app: jaeger-mysql-plugin
-spec:
-  type: ClusterIP
-  # 对于 gRPC，设置 sessionAffinity: None 以确保多副本负载均衡
-  # gRPC 使用 HTTP/2 长连接，默认会保持会话亲和性，可能导致流量只到一个 pod
-  # 注意：由于 gRPC 的长连接特性，即使设置了 sessionAffinity: None，
-  # 已建立的连接仍会保持到同一个 pod。新连接会按负载均衡策略分发。
-  # 如果需要更好的负载均衡，可以考虑：
-  # 1. 增加副本数（replicas）
-  # 2. 使用 Headless Service + gRPC 客户端负载均衡（需要客户端支持）
-  sessionAffinity: None
-  ports:
-  - port: 17271
-    targetPort: 17271
-    protocol: TCP
-    name: grpc
-  selector:
-    app: jaeger-mysql-plugin
+# ---
+# # Service for MySQL Storage Plugin
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: jaeger-mysql-plugin
+#   namespace: tracing
+#   labels:
+#     app: jaeger-mysql-plugin
+# spec:
+#   type: ClusterIP
+#   # 对于 gRPC，设置 sessionAffinity: None 以确保多副本负载均衡
+#   # gRPC 使用 HTTP/2 长连接，默认会保持会话亲和性，可能导致流量只到一个 pod
+#   # 注意：由于 gRPC 的长连接特性，即使设置了 sessionAffinity: None，
+#   # 已建立的连接仍会保持到同一个 pod。新连接会按负载均衡策略分发。
+#   # 如果需要更好的负载均衡，可以考虑：
+#   # 1. 增加副本数（replicas）
+#   # 2. 使用 Headless Service + gRPC 客户端负载均衡（需要客户端支持）
+#   sessionAffinity: None
+#   ports:
+#   - port: 17271
+#     targetPort: 17271
+#     protocol: TCP
+#     name: grpc
+#   selector:
+#     app: jaeger-mysql-plugin
 
 ---
 # Jaeger Collector with gRPC Storage

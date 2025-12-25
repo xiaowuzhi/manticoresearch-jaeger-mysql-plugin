@@ -106,6 +106,9 @@ echo ""
 echo -e "${YELLOW}步骤 3/4: 部署 MySQL 存储插件 (使用 hostPath)...${NC}"
 echo "  hostPath: $PLUGIN_DIR"
 
+
+TEMP_YAML="$K3S_DIR/04-01-jaeger-mysql-plugin.yaml"
+
 cat <<EOF | kubectl apply -f -
 apiVersion: apps/v1
 kind: Deployment
@@ -201,6 +204,9 @@ echo -e "${YELLOW}步骤 4/4: 部署 Jaeger Collector 和 Query...${NC}"
 # 删除旧部署
 kubectl delete deployment jaeger-collector jaeger-query -n tracing 2>/dev/null || true
 kubectl delete deployment jaeger-collector-grpc jaeger-query-grpc -n tracing 2>/dev/null || true
+
+
+kubectl apply -f "$TEMP_YAML"
 
 kubectl apply -f "$JAEGER_YAML"
 
