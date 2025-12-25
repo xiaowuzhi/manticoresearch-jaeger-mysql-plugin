@@ -129,7 +129,7 @@ spec:
         app: jaeger-mysql-plugin
     spec:
       containers:
-      - name: plugin
+      - name: jaeger-mysql-plugin-01
         image: alpine:latest
         command:
         - /bin/sh

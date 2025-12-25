@@ -196,7 +196,7 @@ spec:
     spec:
       containers:
       - name: jaeger-query
-        image: quay.io/jaegertracing/jaeger-query:latest
+        image: docker.1ms.run/jaegertracing/jaeger-query:latest
         imagePullPolicy: IfNotPresent
         args:
         - --grpc-storage.server=jaeger-mysql-plugin:17271
