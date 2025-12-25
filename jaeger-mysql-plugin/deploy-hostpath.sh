@@ -109,7 +109,8 @@ echo "  hostPath: $PLUGIN_DIR"
 
 TEMP_YAML="$K3S_DIR/04-01-jaeger-mysql-plugin.yaml"
 
-cat <<EOF | kubectl apply -f -
+cat > "$TEMP_YAML" <<EOF
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -187,6 +188,14 @@ spec:
     app: jaeger-mysql-plugin
 EOF
 
+if [ ! -f "$TEMP_YAML" ]; then
+    echo -e "${RED}✗ 找不到 Jaeger msyql-plugin 配置: $TEMP_YAML${NC}"
+    exit 1
+fi
+
+kubectl apply -f "$TEMP_YAML"
+
+
 echo -e "${GREEN}✓ MySQL 插件配置已应用${NC}"
 
 # 强制重启以加载新的二进制文件
@@ -205,8 +214,6 @@ echo -e "${YELLOW}步骤 4/4: 部署 Jaeger Collector 和 Query...${NC}"
 kubectl delete deployment jaeger-collector jaeger-query -n tracing 2>/dev/null || true
 kubectl delete deployment jaeger-collector-grpc jaeger-query-grpc -n tracing 2>/dev/null || true
 
-
-kubectl apply -f "$TEMP_YAML"
 
 kubectl apply -f "$JAEGER_YAML"
 
