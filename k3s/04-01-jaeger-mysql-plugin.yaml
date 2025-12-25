@@ -20,13 +20,12 @@ spec:
       - name: plugin
         image: alpine:latest
         command:
-        - /app/jaeger-mysql-plugin
-        args:
-        - --grpc-addr=:17271
-        - --mysql-addr=manticore:9306
-        - --mysql-db=jaeger
-        - --mysql-user=root
-        - --mysql-pass=
+        - /bin/sh
+        - -c
+        - |
+          # 设置文件描述符限制，避免 "too many open files" 错误
+          ulimit -n 65536
+          exec /app/jaeger-mysql-plugin             --grpc-addr=:17271             --mysql-addr=manticore:9306             --mysql-db=             --mysql-user=root             --mysql-pass=
         ports:
         - containerPort: 17271
           name: grpc
