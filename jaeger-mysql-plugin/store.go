@@ -278,7 +278,17 @@ func marshalRefs(refs []model.SpanRef) string {
 	if len(refs) == 0 {
 		return "[]"
 	}
-	return encodeJSON(refs)
+
+
+	logger := zerolog.New(os.Stderr).With().
+		Str("module", "refs").
+		Timestamp().
+		Logger()
+
+		str := encodeJSON(refs)
+		logger.Debug().Msg(fmt.Sprintf("====>001 refs %#v str %#v", refs, str))
+
+	return str
 }
 
 // marshalProcess 序列化 process 字段
@@ -297,6 +307,13 @@ func encodeJSON(v interface{}) string {
 	if err != nil {
 		return "[]"
 	}
+
+	logger := zerolog.New(os.Stderr).With().
+		Str("module", "refs1").
+		Timestamp().
+		Logger()
+	logger.Debug().Msg(fmt.Sprintf("====>002 data %#v", data))
+
 	return string(data)
 }
 
